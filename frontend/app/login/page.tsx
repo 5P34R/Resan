@@ -13,9 +13,7 @@ import { ToastAction } from "@radix-ui/react-toast"
 import { redirect } from 'next/navigation'
 
 
-
 export default function LoginPage() {
-
 
     useEffect(() => {
         if (localStorage.getItem("access_token")) {
