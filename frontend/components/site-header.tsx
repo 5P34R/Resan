@@ -8,21 +8,23 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import UserNav from "./user-nav"
 import React from "react"
 import SemSwitcher from "./switcher"
+import { useAuth } from "@/contexts/authContext"
 
 
 export function SiteHeader() {
-  const token = localStorage.getItem("access_token"); // Get the token without useState
+  
+  const { state } = useAuth()
+  console.log(state.isAuthenticated)
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-background">
+    <header className="bg-background sticky top-0 z-40 w-full border-b">
       <div className="container flex h-16 items-center space-x-4 sm:justify-between sm:space-x-0">
         <MainNav items={siteConfig.mainNav} />
         <div className="flex flex-1 items-center justify-end space-x-4">
           <nav className="flex items-center space-x-3">
             {
-              token ? (
+              state.isAuthenticated ? (
                 <>
-                  <SemSwitcher />
                   <ThemeToggle />
                   <UserNav /> 
                 </>

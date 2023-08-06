@@ -10,22 +10,28 @@ import { ReloadIcon } from "@radix-ui/react-icons"
 import endpoint from "@/config/api"
 import { useToast } from "@/components/ui/use-toast"
 import { ToastAction } from "@radix-ui/react-toast"
-import { redirect } from 'next/navigation'
+import { useRouter } from 'next/navigation'
+import { useAuthActions } from "@/contexts/authActions"
+import { useAuth } from "@/contexts/authContext"
 
 
 export default function LoginPage() {
 
-    useEffect(() => {
-        if (localStorage.getItem("access_token")) {
-            redirect("/")
-        }
-    }, [])
+    const authActions = useAuthActions()
+    const { state } = useAuth()
+    const router = useRouter()
 
     const { toast } = useToast()
 
     const [username, setUsername] = useState<string>("")
     const [password, setPassword] = useState<string>("")
     const [loading, setLoading] = useState<boolean>(false)
+
+    useEffect(() => {
+        if (state.isAuthenticated) {
+            router.push("/")
+        }
+    })
 
     const LoginHandler = async () => {
 
@@ -34,28 +40,33 @@ export default function LoginPage() {
             password: password
         })
 
-        .then((res) => {
-            const tokens = res.data
-            localStorage.setItem("access_token", tokens.access)
-            toast({
-                title: "Login success",
-                description: "You have successfully logged into your account",
-                variant: "success"
-            })
-            setLoading(false)
-            window.location.href = "/"  
-        })
-        .catch((err) => {
-            console.log("erro",err)
-            toast({
-                title: "Login failed",
-                description: "Please check your username and password",
-                variant: "destructive",
-                action: <ToastAction altText="Try again">Try again</ToastAction>,
+            .then((res) => {
+                const tokens = res.data
+                console.log(tokens)
+                const { access, refresh } = tokens;
+                localStorage.setItem('accessToken', access);
+                localStorage.setItem('refreshToken', refresh);
+                authActions.login()
+                toast({
+                    title: "Login success",
+                    description: "You have successfully logged into your account",
+                    variant: "success"
+                })
+                setLoading(false)
+                router.push("/")
 
             })
-            setLoading(false)
-        })
+            .catch((err) => {
+                console.log("erro", err)
+                toast({
+                    title: "Login failed",
+                    description: "Please check your username and password",
+                    variant: "destructive",
+                    action: <ToastAction altText="Try again">Try again</ToastAction>,
+
+                })
+                setLoading(false)
+            })
 
     }
 
@@ -109,13 +120,13 @@ export default function LoginPage() {
                         </div>
                     </CardContent>
                     <CardFooter>
-                        {loading ?<Button className="w-full" disabled>
+                        {loading ? <Button className="w-full" disabled>
                             <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />
                             Please wait
                         </Button>
-                        :
-                    <Button className="w-full" onClick={() =>{setLoading(true); LoginHandler()}}>Login account</Button>
-                    }
+                            :
+                            <Button className="w-full" onClick={() => { setLoading(true); LoginHandler() }}>Login account</Button>
+                        }
                     </CardFooter>
                 </Card>
             </main>
