@@ -9,3 +9,5 @@ The main goal of resan is to visualize the result datas in graphical form includ
     - Nextjs
   - Backend
     - Django   
+
+Currently under development
