@@ -1,6 +1,6 @@
 from rest_framework.serializers import ModelSerializer
 
-from core.models import Staff, Student, Subject, Class
+from core.models import Staff, Student, Subject, Class, ClassSubject
 
 
 class StaffSerializer(ModelSerializer):
@@ -24,7 +24,7 @@ class StudentSerializer(ModelSerializer):
     subject = SubjectSerializer(many=True, read_only=True)
     class Meta:
         model = Student
-        fields = ['id', 'name', 'adminision_id', 'gender', 'phone', 'email', 'subject', 'no_of_supply', 'cgpa']
+        fields = ['id', 'name', 'admission_id', 'gender', 'phone', 'email', 'cgpa']
         
 
 class BatchListSerializer(ModelSerializer):
@@ -32,10 +32,17 @@ class BatchListSerializer(ModelSerializer):
         model = Class
         fields = ['name', 'batch', 'starting_year']
 
+class ClassSubjectSerializer(ModelSerializer):
+    subject = SubjectSerializer(read_only=True)
+    class Meta:
+        model = ClassSubject
+        fields = ['subject']
+
 class ClassSerializer(ModelSerializer):
-    student = StudentSerializer(many=True, read_only=True)
+   
+    subjects = SubjectSerializer(many=True, read_only=True)
     class Meta:
         model = Class
-        fields = ['name', 'batch', 'starting_year', 'student']
+        fields = ['name', 'batch', 'starting_year', 'student', 'subjects']
         
 
