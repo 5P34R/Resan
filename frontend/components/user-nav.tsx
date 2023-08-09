@@ -1,15 +1,19 @@
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuGroup, DropdownMenuItem, DropdownMenuShortcut, DropdownMenuContent } from "./ui/dropdown-menu"
 import { Button } from "./ui/button"
-import { redirect } from "next/navigation"
+import {  useRouter } from "next/navigation"
 import { useEffect } from "react"
+import { useAuthActions } from "@/contexts/authActions"
 
 export default function UserNav(){
-
+  const router = useRouter()
+  const authActions = useAuthActions()
     const logout = () => {
         localStorage.removeItem("access_token")
+        localStorage.removeItem("refresh_token")
+        authActions.logout()
         console.log("Clicked logout")
-        window.location.href = "/login"
+        router.push("/login")
     }
 
     return (

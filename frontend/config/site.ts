@@ -12,6 +12,10 @@ export const siteConfig = {
     {
       title: "Students",
       href: "/students",
+    },
+    {
+      title: "upload",
+      href: "/upload",
     }
   ],
 }
