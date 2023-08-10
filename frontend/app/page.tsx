@@ -14,14 +14,31 @@ import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/authContext';
 import { useRouter } from 'next/navigation';
 
-
-type Highcgpa = {
-  name: string;
-  adminision_id: string;
-  cgpa: number;
+type StudentDetails = {
+  name: string,
+  admission_id: string,
+  cgpa: number,
+  gender: string,
+  phone: string,
+  email: string,
+  no_of_backlog : number,
 }
 
-type HighcgpaList = Highcgpa[]
+type StudentData = {
+  name: string,
+  admission_id: string,
+  cgpa: number,
+  gender: string,
+  total_passed: number,
+  total_failed: number,
+}
+
+type SubjectData = {
+  subject: string,
+  pass_count: number,
+  subject_code:string,
+  staff_name : string
+}
 
 export default function IndexPage() {
 
@@ -34,41 +51,60 @@ export default function IndexPage() {
   const [selectedSemester, setSelectedSemester] = React.useState(semesters[0]);
   const [selectedBatch, setSelectedBatch] = React.useState(batch[0]);
   const [selectedYear, setSelectedYear] = React.useState(year[0]);
-  const [highcgpa, setHighcgpa] = React.useState([])
   const [open, setOpen] = React.useState(false);
 
   const [totalStudents, setTotalStudents] = React.useState(0);
-  const [failedStudents, setFailedStudents] = React.useState(0);
+  const [countFailedFemales , setCountFailedFemales] = React.useState(0);
+  const [countFailedMales , setCountFailedMales] = React.useState(0);
+  const [totalFemale, setTotalFemale] = React.useState<StudentData[] | null>(null);
+  const [totalMale, setTotalMale] = React.useState<StudentData[] | null>(null);
+  const [highcgpa, setHighcgpa] = React.useState<StudentDetails[] | null>(null);
+  const [subjectData, setSubjectData] = React.useState<SubjectData[] | null>(null);
 
   useEffect(() => {
     !state.isAuthenticated ? router.push("/login") : null 
   })
 
   const handlebatch = async () => {
-    await endpoint(`/batch-details?sem=${selectedSemester.value}&batch=${selectedBatch.value}&year=${selectedYear.value}`)
-      .then(res => {
-        if (res.data.error) {
+    endpoint.get(`/result-analysis?batch=${selectedBatch.value}&year=${selectedYear.value}&sem=${selectedSemester.value}`)
+      .then(res =>{
+        if (
+          res.data.female_data &&
+          res.data.male_data &&
+          res.data.top_cgpa &&
+          res.data.subject_names_pass_counts &&
+          res.data.total_student
+        ) {
+          setOpen(true);
+          // console.log(res.data)
+        } else {
           toast({
-            title: res.data.error,
-            variant: "destructive"
-          })
+            title: "No class data found",
+            description: "Please select another batch",
+            variant: "destructive",
+          });
         }
-        else {
-
-          console.log(res.data)
-          setTotalStudents(res.data.student.length)
-          endpoint(`/batch-highcgpa?sem=${selectedSemester.value}&batch=${selectedBatch.value}&year=${selectedYear.value}`)
-            .then(res => {
-              setHighcgpa(res.data)
-              setOpen(true)
-            })
-            // console.log(val)
-            .catch(err => console.log(err))
-
+  
+        if (res.data.female_data) {
+          setTotalFemale(res.data.female_data);
+          const countFailedFemales = res.data.female_data.filter((student: { total_failed: number; })  => student.total_failed > 0).length;
+          setCountFailedFemales(countFailedFemales);
         }
-      }
-      )
-      .catch(err => console.log(err))
+        if (res.data.male_data) {
+          setTotalMale(res.data.male_data);
+        }
+        if (res.data.top_cgpa) {
+          setHighcgpa(res.data.top_cgpa);
+          const countFailedMales = res.data.male_data.filter((student: { total_failed: number; }) => student.total_failed > 0).length;
+          setCountFailedMales(countFailedMales);
+        }
+        if (res.data.subject_names_pass_counts) {
+          setSubjectData(res.data.subject_names_pass_counts);
+        }
+        if (res.data.total_student) {
+          setTotalStudents(res.data.total_student);
+        }
+      })
   }
 
 
@@ -83,7 +119,7 @@ export default function IndexPage() {
           !open ? (
 
             <div className='flex h-1/2 w-full flex-col items-center justify-center gap-8'>
-              <h1 className='text-2xl font-semibold tracking-tight'>Select batch</h1>
+              <h1 className='text-2xl font-semibold tracking-tight'>Select the batch</h1>
               <div className='flex gap-8'>
                 <SemSwitcher
                   options={semesters}
@@ -136,7 +172,7 @@ export default function IndexPage() {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth="2"
-                          className="text-muted-foreground h-4 w-4"
+                          className="h-4 w-4 text-muted-foreground"
                         >
                           <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
                           <circle cx="9" cy="7" r="4" />
@@ -161,7 +197,7 @@ export default function IndexPage() {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth="2"
-                          className="text-muted-foreground h-4 w-4"
+                          className="h-4 w-4 text-muted-foreground"
                         >
                           <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
                           <circle cx="9" cy="7" r="4" />
@@ -169,7 +205,7 @@ export default function IndexPage() {
                         </svg>
                       </CardHeader>
                       <CardContent>
-                        <div className="text-2xl font-bold">20</div>
+                        <div className="text-2xl font-bold">{countFailedFemales + countFailedMales}</div>
                       </CardContent>
                     </Card>
                     <Card>
@@ -183,7 +219,7 @@ export default function IndexPage() {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth="2"
-                          className="text-muted-foreground h-4 w-4"
+                          className="h-4 w-4 text-muted-foreground"
                         >
                           <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
                           <circle cx="9" cy="7" r="4" />
@@ -191,7 +227,7 @@ export default function IndexPage() {
                         </svg>
                       </CardHeader>
                       <CardContent>
-                        <div className="text-2xl font-bold">25</div>
+                        <div className="text-2xl font-bold">{totalMale?.length}</div>
                       </CardContent>
                     </Card>
                     <Card>
@@ -207,7 +243,7 @@ export default function IndexPage() {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth="2"
-                          className="text-muted-foreground h-4 w-4"
+                          className="h-4 w-4 text-muted-foreground"
                         >
                           <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
                           <circle cx="9" cy="7" r="4" />
@@ -215,7 +251,7 @@ export default function IndexPage() {
                         </svg>
                       </CardHeader>
                       <CardContent>
-                        <div className="text-2xl font-bold">25</div>
+                        <div className="text-2xl font-bold">{totalFemale?.length}</div>
                       </CardContent>
                     </Card>
                   </div>
@@ -225,7 +261,7 @@ export default function IndexPage() {
                         <CardTitle>Overview</CardTitle>
                       </CardHeader>
                       <CardContent className="pl-2">
-                        <Overview />
+                        <Overview data={subjectData} />
                       </CardContent>
                     </Card>
                     <Card className="col-span-3">
@@ -238,7 +274,7 @@ export default function IndexPage() {
                       <CardContent>
                         <div className="space-y-8">
                           {
-                            highcgpa.map((student: Highcgpa, index) => (
+                            highcgpa?.map((student: StudentDetails, index) => (
                               <div className="flex items-center">
                                 <Avatar className="h-9 w-9">
                                   <AvatarImage src="/avatars/01.png" alt="Avatar" />
@@ -246,8 +282,8 @@ export default function IndexPage() {
                                 </Avatar>
                                 <div className="ml-4 space-y-1">
                                   <p className="text-sm font-medium leading-none">{student.name}</p>
-                                  <p className="text-muted-foreground text-sm">
-                                    {student.adminision_id}
+                                  <p className="text-sm text-muted-foreground">
+                                    {student.admission_id}
                                   </p>
                                 </div>
                                 <div className="ml-auto font-medium">{student.cgpa}</div>

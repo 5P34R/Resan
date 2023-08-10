@@ -14,8 +14,12 @@ export const siteConfig = {
       href: "/students",
     },
     {
-      title: "upload",
+      title: "Result Upload",
       href: "/upload",
+    },
+    {
+      title: "Semesters",
+      href: "/semester",
     }
   ],
 }

@@ -68,4 +68,15 @@ const year = [
     // can add more years please
 ]
 
-export { semesters, batch, year }
+const examTypes = [
+    {
+        "label": "Regular",
+        "value": "regular",
+    },
+    {
+        "label": "Supplementary",
+        "value": "supplementary",
+    }
+]
+
+export { semesters, batch, year, examTypes }
