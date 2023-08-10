@@ -5,7 +5,7 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 
-import { labels, priorities, statuses } from "@/components/data/data"
+import { labels, priorities, statuses, backlogs} from "@/components/data/data"
 import { Task } from "@/components/data/schema"
 import { DataTableColumnHeader } from "@/components/data-table-column-header"
 import { DataTableRowActions } from "@/components/data-table-row-actions"
@@ -44,7 +44,7 @@ export const columns: ColumnDef<Task>[] = [
   {
     accessorKey: "title",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Title" />
+      <DataTableColumnHeader column={column} title="Student Name" />
     ),
     cell: ({ row }) => {
       const label = labels.find((label) => label.value === row.original.label)
@@ -62,7 +62,7 @@ export const columns: ColumnDef<Task>[] = [
   {
     accessorKey: "status",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Status" />
+      <DataTableColumnHeader column={column} title="Gender" />
     ),
     cell: ({ row }) => {
       const status = statuses.find(
@@ -89,7 +89,7 @@ export const columns: ColumnDef<Task>[] = [
   {
     accessorKey: "priority",
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Priority" />
+      <DataTableColumnHeader column={column} title="Mobile Number" />
     ),
     cell: ({ row }) => {
       const priority = priorities.find(
@@ -111,6 +111,42 @@ export const columns: ColumnDef<Task>[] = [
     },
     filterFn: (row, id, value) => {
       return value.includes(row.getValue(id))
+    },
+  },
+  {
+    accessorKey: "backlog",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Backlog" />
+    ),
+    cell: ({ row }) => {
+      const backlog = backlogs.find((backlog) => backlog.value === row.original.backlog)
+
+      return (
+        <div className="flex space-x-2">
+          {backlog && <Badge variant="outline">{backlog.backlog}</Badge>}
+          <span className="max-w-[500px] truncate font-medium">
+            {row.getValue("backlog")}
+          </span>
+        </div>
+      )
+    },
+  },
+  {
+    accessorKey: "semester",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Semester" />
+    ),
+    cell: ({ row }) => {
+      const label = labels.find((label) => label.value === row.original.label)
+
+      return (
+        <div className="flex space-x-2">
+          {label && <Badge variant="outline">{label.label}</Badge>}
+          <span className="max-w-[500px] truncate font-medium">
+            {row.getValue("semester")}
+          </span>
+        </div>
+      )
     },
   },
   {
