@@ -25,47 +25,71 @@ import {
   ]
   
   export const statuses = [
+    
     {
-      value: "backlog",
-      label: "Backlog",
-      icon: QuestionMarkCircledIcon,
+       value:"Male",
+       label:"Male",
+
     },
-    {
-      value: "todo",
-      label: "Todo",
-      icon: CircleIcon,
-    },
-    {
-      value: "in progress",
-      label: "In Progress",
-      icon: StopwatchIcon,
-    },
-    {
-      value: "done",
-      label: "Done",
-      icon: CheckCircledIcon,
-    },
-    {
-      value: "canceled",
-      label: "Canceled",
-      icon: CrossCircledIcon,
+    { 
+      value:"Female",
+      label:"Female",
+
     },
   ]
   
   export const priorities = [
-    {
-      label: "Low",
-      value: "low",
-      icon: ArrowDownIcon,
+    
+    { 
+      label:"12345",
+      value:"12345",
+
     },
-    {
-      label: "Medium",
-      value: "medium",
-      icon: ArrowRightIcon,
-    },
-    {
-      label: "High",
-      value: "high",
-      icon: ArrowUpIcon,
+    { 
+      label:"67890",
+      value:"67890",
+
     },
   ]
+
+  export const backlogs = [
+
+     { 
+      label:"null",
+      value:"null",
+
+     },
+     {
+      label:"2",
+      value:"2",
+
+     },
+     {
+      label:"10",
+      value:"10",
+
+     },
+
+
+  ]
+
+  export const semesters = [
+
+    { 
+     label:"null",
+     value:"null",
+
+    },
+    {
+     label:"2",
+     value:"2",
+
+    },
+    {
+     label:"10",
+     value:"10",
+
+    },
+
+
+ ]
