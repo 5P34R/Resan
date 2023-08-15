@@ -195,33 +195,6 @@ class ResultView(APIView):
         return Response(serializer.data)
         # breakpoint()
         
-# ResultAnalysis
-# class ResultAnalysis(APIView):
-    
-#     def get(self, request):
-#         sem = request.query_params.get('sem')
-#         year = request.query_params.get('year')
-#         batch = request.query_params.get('batch')
-        
-#         if not sem or not year or not batch:
-#             return Response({"error": "Please provide semester, year, and batch"})
-#         passed_grades = ['A', 'B', 'C', 'P', 'D']
-        
-#         result = Result.objects.filter(sem=sem, year=year, batch=batch)
-#         total_number = result.count()
-#         total_female_passed = result.filter(student__gender="F", grade__in=passed_grades).count()
-#         total_male_passed = result.filter(student__gender="M", grade__in=passed_grades).count()
-#         total_female_failed = result.filter(student__gender="F", grade="F").count()
-#         total_male_failed = result.filter(student__gender="M", grade="F").count()
-        
-#         return Response({
-#             "total_number": total_number,
-#             "male_pass": total_male_passed,
-#             "male_fail": total_male_failed,
-#             "female_pass":total_female_passed,
-#             "female_fail": total_female_failed
-#         })
-
 class ResultAnalysis(APIView):
     def get(self, request):
         sem = request.query_params.get('sem')

@@ -36,7 +36,6 @@ class ClassSerializer(ModelSerializer):
         
 
 
-
 class ResultSerializer(ModelSerializer):
     subject = SubjectSerializer(read_only=True)
     student = StudentSerializer(read_only=True)

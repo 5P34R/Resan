@@ -61,7 +61,7 @@ type SubjectData = {
 }
 
 type OverviewProps = {
-  data: SubjectData[];
+  data: any[] | undefined;
 };
 
 export function Overview(props: OverviewProps) {

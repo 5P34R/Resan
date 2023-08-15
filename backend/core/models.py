@@ -69,6 +69,6 @@ class Result(models.Model):
     subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
     grade = models.CharField(max_length=100)
     backlog = models.BooleanField(default=False)
-    
+
     def __str__(self):
         return f"{self.student.name} - {self.subject.name} - {self.grade} - {self.backlog}"

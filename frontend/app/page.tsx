@@ -12,6 +12,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/authContext';
 import { useRouter } from 'next/navigation';
+import { Separator } from '@/components/ui/separator';
+import { ReloadIcon } from '@radix-ui/react-icons';
+import { set } from 'zod';
 
 type StudentDetails = {
   name: string,
@@ -20,7 +23,7 @@ type StudentDetails = {
   gender: string,
   phone: string,
   email: string,
-  no_of_backlog : number,
+  no_of_backlog: number,
 }
 
 type StudentData = {
@@ -35,8 +38,8 @@ type StudentData = {
 type SubjectData = {
   subject: string,
   pass_count: number,
-  subject_code:string,
-  staff_name : string
+  subject_code: string,
+  staff_name: string
 }
 
 export default function IndexPage() {
@@ -53,20 +56,23 @@ export default function IndexPage() {
   const [open, setOpen] = React.useState(false);
 
   const [totalStudents, setTotalStudents] = React.useState(0);
-  const [countFailedFemales , setCountFailedFemales] = React.useState(0);
-  const [countFailedMales , setCountFailedMales] = React.useState(0);
+  const [countFailedFemales, setCountFailedFemales] = React.useState(0);
+  const [countFailedMales, setCountFailedMales] = React.useState(0);
   const [totalFemale, setTotalFemale] = React.useState<StudentData[] | null>(null);
   const [totalMale, setTotalMale] = React.useState<StudentData[] | null>(null);
   const [highcgpa, setHighcgpa] = React.useState<StudentDetails[] | null>(null);
-  const [subjectData, setSubjectData] = React.useState<SubjectData[] | null>(null);
+  const [subjectData, setSubjectData] = React.useState<any[] | undefined>();
+
+  const [refresh, setRefresh] = React.useState(false);
 
   useEffect(() => {
-    !state.isAuthenticated ? router.push("/login") : null 
+  
+    !state.isAuthenticated ? router.push("/login") : null
   })
 
   const handlebatch = async () => {
     endpoint.get(`/result-analysis?batch=${selectedBatch.value}&year=${selectedYear.value}&sem=${selectedSemester.value}`)
-      .then(res =>{
+      .then(res => {
         if (
           res.data.female_data &&
           res.data.male_data &&
@@ -83,10 +89,10 @@ export default function IndexPage() {
             variant: "destructive",
           });
         }
-  
+
         if (res.data.female_data) {
           setTotalFemale(res.data.female_data);
-          const countFailedFemales = res.data.female_data.filter((student: { total_failed: number; })  => student.total_failed > 0).length;
+          const countFailedFemales = res.data.female_data.filter((student: { total_failed: number; }) => student.total_failed > 0).length;
           setCountFailedFemales(countFailedFemales);
         }
         if (res.data.male_data) {
@@ -105,6 +111,11 @@ export default function IndexPage() {
         }
       })
   }
+ 
+  const RefreshStates = async () => {
+    setOpen(false);
+    setRefresh(false);
+  }
 
   return (
     <section className="container grid h-screen gap-6 pb-8 md:py-10">
@@ -112,6 +123,27 @@ export default function IndexPage() {
         <h1 className="text-3xl font-extrabold leading-tight tracking-tighter md:text-4xl">
           Dashboard
         </h1>
+        {
+          open ? (
+            <div className='ml-auto items-center space-x-4'>
+              {
+                refresh ? (
+                  <Button disabled>
+                    <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />
+                    Please wait
+                  </Button>
+                )
+                  :
+                  (
+                    <Button onClick={(e) => { setRefresh(true); RefreshStates()}}>Refresh Report</Button>
+
+                  )
+              }
+              <Button>Generate Report</Button>
+            </div>
+          ) : null
+        }
+
 
         {
           !open ? (
@@ -144,13 +176,14 @@ export default function IndexPage() {
           )
             :
             (
+
               <Tabs defaultValue="overview" className="w-full space-y-6 py-4">
                 <TabsList>
                   <TabsTrigger value="overview">Overview</TabsTrigger>
-                  <TabsTrigger value="analytics" >
+                  <TabsTrigger value="analytics" disabled>
                     Analytics
                   </TabsTrigger>
-                  <TabsTrigger value="reports">
+                  <TabsTrigger value="reports" disabled>
                     Reports
                   </TabsTrigger>
                 </TabsList>
@@ -170,15 +203,26 @@ export default function IndexPage() {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth="2"
-                          className="h-4 w-4 text-muted-foreground"
+                          className="text-muted-foreground h-4 w-4"
                         >
                           <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
                           <circle cx="9" cy="7" r="4" />
                           <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
                         </svg>
                       </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold">{totalStudents}</div>
+                      <Separator className='my-1' />
+                      <CardContent className='flex justify-evenly'>
+                        <div className='flex flex-col items-center'>
+                          <h1>Male</h1>
+
+                          <div className="text-2xl font-bold">{totalMale?.length}</div>
+                        </div>
+                        <Separator orientation="vertical" />
+                        <div className='flex flex-col items-center'>
+                          <h1>Female</h1>
+
+                          <div className="text-2xl font-bold">{totalFemale?.length}</div>
+                        </div>
                       </CardContent>
                     </Card>
 
@@ -195,20 +239,31 @@ export default function IndexPage() {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth="2"
-                          className="h-4 w-4 text-muted-foreground"
+                          className="text-muted-foreground h-4 w-4"
                         >
                           <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
                           <circle cx="9" cy="7" r="4" />
                           <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
                         </svg>
                       </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold">{countFailedFemales + countFailedMales}</div>
+                      <Separator className='my-1' />
+                      <CardContent className='flex justify-evenly'>
+                        <div className='flex flex-col items-center'>
+                          <h1>Male</h1>
+
+                          <div className="text-2xl font-bold">{countFailedMales}</div>
+                        </div>
+                        <Separator orientation="vertical" />
+                        <div className='flex flex-col items-center'>
+                          <h1>Female</h1>
+
+                          <div className="text-2xl font-bold">{countFailedFemales}</div>
+                        </div>
                       </CardContent>
                     </Card>
                     <Card>
                       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Boys Count</CardTitle>
+                        <CardTitle className="text-sm font-medium">Male Count</CardTitle>
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           viewBox="0 0 24 24"
@@ -217,21 +272,33 @@ export default function IndexPage() {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth="2"
-                          className="h-4 w-4 text-muted-foreground"
+                          className="text-muted-foreground h-4 w-4"
                         >
                           <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
                           <circle cx="9" cy="7" r="4" />
                           <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
                         </svg>
                       </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold">{totalMale?.length}</div>
+                      <Separator className='my-1' />
+
+                      <CardContent className='flex justify-evenly'>
+                        <div className='flex flex-col items-center'>
+                          <h1>Pass</h1>
+
+                          <div className="text-2xl font-bold">{totalMale?.length ?? 0 - countFailedMales}</div>
+                        </div>
+                        <Separator orientation="vertical" />
+                        <div className='flex flex-col items-center'>
+                          <h1>Failed</h1>
+
+                          <div className="text-2xl font-bold">{countFailedMales}</div>
+                        </div>
                       </CardContent>
                     </Card>
                     <Card>
                       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">
-                          Girl Count
+                          Female Count
                         </CardTitle>
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
@@ -241,15 +308,26 @@ export default function IndexPage() {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth="2"
-                          className="h-4 w-4 text-muted-foreground"
+                          className="text-muted-foreground h-4 w-4"
                         >
                           <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
                           <circle cx="9" cy="7" r="4" />
                           <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
                         </svg>
                       </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold">{totalFemale?.length}</div>
+                      <Separator className='my-1' />
+                      <CardContent className='flex justify-evenly'>
+                        <div className='flex flex-col items-center'>
+                          <h1>Pass</h1>
+
+                          <div className="text-2xl font-bold">{totalFemale?.length ?? 0 - countFailedFemales}</div>
+                        </div>
+                        <Separator orientation="vertical" />
+                        <div className='flex flex-col items-center'>
+                          <h1>Failed</h1>
+
+                          <div className="text-2xl font-bold">{countFailedFemales}</div>
+                        </div>
                       </CardContent>
                     </Card>
                   </div>
@@ -276,11 +354,11 @@ export default function IndexPage() {
                               <div className="flex items-center">
                                 <Avatar className="h-9 w-9">
                                   <AvatarImage src="/avatars/01.png" alt="Avatar" />
-                                  <AvatarFallback>OM</AvatarFallback>
+                                  <AvatarFallback>SD</AvatarFallback>
                                 </Avatar>
                                 <div className="ml-4 space-y-1">
                                   <p className="text-sm font-medium leading-none">{student.name}</p>
-                                  <p className="text-sm text-muted-foreground">
+                                  <p className="text-muted-foreground text-sm">
                                     {student.admission_id}
                                   </p>
                                 </div>
@@ -294,6 +372,7 @@ export default function IndexPage() {
                   </div>
                 </TabsContent>
               </Tabs>
+
             )
         }
 
