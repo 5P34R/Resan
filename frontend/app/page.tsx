@@ -8,7 +8,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Overview } from '@/components/Overview';
 import endpoint from '@/config/api';
-import { set } from 'zod';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/authContext';
@@ -106,7 +105,6 @@ export default function IndexPage() {
         }
       })
   }
-
 
   return (
     <section className="container grid h-screen gap-6 pb-8 md:py-10">

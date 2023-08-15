@@ -1,6 +1,6 @@
 from rest_framework.serializers import ModelSerializer
 
-from core.models import Staff, Student, Subject, Class, ClassSubject
+from core.models import Result, Staff, Student, Subject, Class, ClassSubject
 
 
 class StaffSerializer(ModelSerializer):
@@ -21,28 +21,25 @@ class BatchStudentSerializer(ModelSerializer):
         fields = ['name', 'adminision_id', 'gender', 'phone', 'email', 'no_of_supply', 'cgpa']
 
 class StudentSerializer(ModelSerializer):
-    subject = SubjectSerializer(many=True, read_only=True)
     class Meta:
         model = Student
-        fields = ['id', 'name', 'admission_id', 'gender', 'phone', 'email', 'cgpa']
+        fields = ['id', 'name', 'admission_id', 'gender', 'phone', 'email', 'cgpa', 'no_of_backlog']
         
 
-class BatchListSerializer(ModelSerializer):
-    class Meta:
-        model = Class
-        fields = ['name', 'batch', 'starting_year']
-
-class ClassSubjectSerializer(ModelSerializer):
-    subject = SubjectSerializer(read_only=True)
-    class Meta:
-        model = ClassSubject
-        fields = ['subject']
 
 class ClassSerializer(ModelSerializer):
    
     subjects = SubjectSerializer(many=True, read_only=True)
     class Meta:
         model = Class
-        fields = ['name', 'batch', 'starting_year', 'student', 'subjects']
+        fields = ['name', 'batch', 'year', 'students', 'subjects']
         
 
+
+
+class ResultSerializer(ModelSerializer):
+    subject = SubjectSerializer(read_only=True)
+    student = StudentSerializer(read_only=True)
+    class Meta:
+        model = Result
+        fields = ['sem', 'batch', 'year', 'exam_type', 'student', 'subject', 'grade', 'backlog']

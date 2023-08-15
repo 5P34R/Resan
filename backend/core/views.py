@@ -1,9 +1,10 @@
 from django.http import HttpResponse
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from core.serializers import BatchListSerializer, BatchStudentSerializer, ClassSerializer, StudentSerializer
+from core.serializers import ResultSerializer, StudentSerializer
 from rest_framework.parsers import MultiPartParser
 from django.db.models import Count, F, Q
+from rest_framework import status
 
 from .models import Result, Staff, Student, Class, Subject
 import pandas as pd
@@ -31,50 +32,6 @@ class StudentDetailView(APIView):
         serializer = StudentSerializer(student)
         return Response(serializer.data)
 
-class BatchList(APIView):
-    
-    def get(self, request):
-        batchs = Class.objects.all()
-        serializer = BatchListSerializer(batchs, many=True)
-        return Response(serializer.data)
-
-
-class BatchStudent(APIView):
-    
-    def get(self, request, **kwargs):
-        sem = request.GET.get("sem")
-        batch = request.GET.get("batch")
-        year = request.GET.get("year")
-        
-        if not sem or not batch or not year:
-            return Response({"error": "Please provide all the details"})
-
-        class_obj = Class.objects.filter(name=sem, batch=batch, year=year).first()
-        if not class_obj:
-            return Response({"error": "No class found"})
-
-        serializer = ClassSerializer(class_obj, many=False)
-        return Response(serializer.data)
-
-
-class BatchHigestCGPA(APIView):
-    
-    def get(self, request, **kwargs):
-        sem = request.GET.get("sem")
-        batch = request.GET.get("batch")
-        year = request.GET.get("year")
-        
-        if not sem or not batch or not year:
-            return Response({"error": "Please provide all the details"})
-        
-        class_obj = Class.objects.filter(name=sem, batch=batch, year=year).first()
-        if not class_obj:
-            return Response({"error": "No class found"})
-        
-        class_students = class_obj.student.order_by("-cgpa")[:5]
-        class_students = BatchStudentSerializer(class_students, many=True).data
-        return Response(class_students)
-
 
 class UploadView(APIView):
     parser_classes = (MultiPartParser,)
@@ -83,12 +40,15 @@ class UploadView(APIView):
         file = request.data.get('file')
         sem = request.data.get('sem')
         year = request.data.get('year')
+        exam_type = request.data.get('exam_type')
         if not file:
             return Response({"error": "Please provide a file"})
         if not sem:
             return Response({"error": "Please provide a semester"})
         if not year:
             return Response({"error": "Please provide a year"})
+        if not exam_type:
+            return Response({"error": "Please provide a exam type"})
 
         try:
             df = pd.read_excel(file, skiprows=[0])
@@ -112,7 +72,7 @@ class UploadView(APIView):
                         sem=sem, 
                         year=year, 
                         batch=batch,
-                        exam_type="exam_type", 
+                        exam_type=exam_type, 
                         student=student, 
                         subject=subject, 
                         grade=row_data[subject.code], 
@@ -121,12 +81,12 @@ class UploadView(APIView):
                     result_list.append(res)
                     print(f"Result created {res}")
                 print(f"student CGPA : {row_data['CGPA']}")
-                student.cgpa += row_data["CGPA"]
+                student.cgpa = row_data["CGPA"]
                 student.save()
                 print("=====================================")
             Result.objects.bulk_create(result_list)
             # student.cgpa += row_data["CGPA"]
-            return Response({"message": "Subjects checked successfully"})
+            return Response({"message": "Subjects checked successfully", "success":True}, status=status.HTTP_201_CREATED)
 
         except Exception as e:
             return Response({"error": str(e)})
@@ -170,7 +130,7 @@ class AddSemester(APIView):
             students_to_create.append(student)
         
         Student.objects.bulk_create(students_to_create)
-        
+
         subjectsreq = request.data.get("subjects")
         subject_list = pd.read_excel(subjectsreq)
         subject_list.columns = subject_list.columns.str.strip()
@@ -195,7 +155,7 @@ class AddSemester(APIView):
         class_obj.students.add(*students_to_create)
         class_obj.subjects.add(*subjects_to_create)
         class_obj.save()
-        return Response({"message": "Students and subjects created successfully"})
+        return Response({"message": "Students and subjects created successfully", "status":"success"}, status=status.HTTP_201_CREATED)
 
 
 class PassRateView(APIView):
@@ -207,7 +167,7 @@ class PassRateView(APIView):
         if not sem or not year or not batch:
             return Response({"error": "Please provide semester, year, and batch"})
         
-        pass_grades = ['A', 'B', 'C', 'D', 'P']  # Define your pass grades here
+        pass_grades = ['A', 'B', 'C', 'D', 'P']  # Defining pass grades here
         
         subjects_pass_counts = Subject.objects.annotate(
             pass_count=Count('result', filter=Q(result__grade__in=pass_grades, result__sem=sem, result__year=year, result__batch=batch))
@@ -219,3 +179,105 @@ class PassRateView(APIView):
         ]
         
         return Response(subject_names_pass_counts)
+    
+class ResultView(APIView):
+    
+    def get(self, request):
+        sem = request.query_params.get('sem')
+        year = request.query_params.get('year')
+        batch = request.query_params.get('batch')
+        
+        if not sem or not year or not batch:
+            return Response({"error": "Please provide semester, year, and batch"})
+        
+        results = Result.objects.filter(sem=sem, year=year, batch=batch)
+        serializer = ResultSerializer(results, many=True)
+        return Response(serializer.data)
+        # breakpoint()
+        
+# ResultAnalysis
+# class ResultAnalysis(APIView):
+    
+#     def get(self, request):
+#         sem = request.query_params.get('sem')
+#         year = request.query_params.get('year')
+#         batch = request.query_params.get('batch')
+        
+#         if not sem or not year or not batch:
+#             return Response({"error": "Please provide semester, year, and batch"})
+#         passed_grades = ['A', 'B', 'C', 'P', 'D']
+        
+#         result = Result.objects.filter(sem=sem, year=year, batch=batch)
+#         total_number = result.count()
+#         total_female_passed = result.filter(student__gender="F", grade__in=passed_grades).count()
+#         total_male_passed = result.filter(student__gender="M", grade__in=passed_grades).count()
+#         total_female_failed = result.filter(student__gender="F", grade="F").count()
+#         total_male_failed = result.filter(student__gender="M", grade="F").count()
+        
+#         return Response({
+#             "total_number": total_number,
+#             "male_pass": total_male_passed,
+#             "male_fail": total_male_failed,
+#             "female_pass":total_female_passed,
+#             "female_fail": total_female_failed
+#         })
+
+class ResultAnalysis(APIView):
+    def get(self, request):
+        sem = request.query_params.get('sem')
+        year = request.query_params.get('year')
+        batch = request.query_params.get('batch')
+        
+        if not sem or not year or not batch:
+            return Response({"error": "Please provide semester, year, and batch"})
+        
+        passed_grades = ['A', 'B', 'C', 'D', 'P']  # Define your pass grades here
+        
+        results = Result.objects.filter(sem=sem, year=year, batch=batch)
+        
+        if not results.exists():
+            return Response({"error": "No results found"})
+        students = Student.objects.filter(result__in=results).distinct()
+        
+        female_data = []
+        male_data = []
+        for student in students:
+            total_passed = results.filter(student=student, grade__in=passed_grades).count()
+            total_failed = results.filter(student=student, grade='F').count()
+            gender = student.gender
+            if gender == 'F':
+                student_data = {
+                    "student_name": student.name,
+                    "gender": gender,
+                    "total_passed": total_passed,
+                    "total_failed": total_failed
+                }
+                female_data.append(student_data)
+            else:
+                student_data = {
+                    "student_name": student.name,
+                    "gender": gender,
+                    "total_passed": total_passed,
+                    "total_failed": total_failed
+                }
+                male_data.append(student_data)
+                
+        
+        subjects_pass_counts = Subject.objects.annotate(
+            pass_count=Count('result', filter=Q(result__grade__in=passed_grades, result__sem=sem, result__year=year, result__batch=batch))
+        ).order_by('-pass_count')
+        
+        subject_names_pass_counts = [
+            {"subject": subject.name, "pass_count": subject.pass_count, "subject_code": subject.code, "staff_name": subject.staff.name}
+            for subject in subjects_pass_counts
+        ]
+        top_students = students.order_by('-cgpa')[:5]  
+        top_cgpa_students = StudentSerializer(top_students, many=True).data
+
+        return Response({
+            "total_student": students.count(),
+            "female_data":female_data,
+            "male_data":male_data,
+            "subject_names_pass_counts":subject_names_pass_counts,
+            "top_cgpa":top_cgpa_students
+        })
