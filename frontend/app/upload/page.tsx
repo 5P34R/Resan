@@ -48,6 +48,7 @@ export default function UploadPage() {
                     router.push('/')
                     
                 } else {
+                    console.log(res.data)
                     toast({
                         title: "Error",
                         description: "Something went wrong",

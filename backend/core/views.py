@@ -32,7 +32,6 @@ class StudentDetailView(APIView):
         serializer = StudentSerializer(student)
         return Response(serializer.data)
 
-
 class UploadView(APIView):
     parser_classes = (MultiPartParser,)
 
@@ -41,54 +40,50 @@ class UploadView(APIView):
         sem = request.data.get('sem')
         year = request.data.get('year')
         exam_type = request.data.get('exam_type')
-        if not file:
-            return Response({"error": "Please provide a file"})
-        if not sem:
-            return Response({"error": "Please provide a semester"})
-        if not year:
-            return Response({"error": "Please provide a year"})
-        if not exam_type:
-            return Response({"error": "Please provide a exam type"})
+        if not file or not sem or not year or not exam_type:
+            return Response({"error": "Please provide all required data"})
 
         try:
             df = pd.read_excel(file, skiprows=[0])
-            df.columns = df.columns.str.strip()  # Clean column names from spaces
+            df.columns = df.columns.str.strip()
+
+            # Batch Existence Check
+            batch = Class.objects.filter(sem=sem, year=year).first()
+            if not batch:
+                return Response({"error": "Batch not found"})
+
             result_list = []
             for index, row in df.iterrows():
-                print(f"Row {index + 2}:")
                 row_data = row.to_dict()
                 student_id = row_data["Student"].split("-")[0].strip()
                 student = Student.objects.filter(admission_id=student_id).first()
-                subject_codes = [col.strip() for col in row_data.keys() if col != "Student" and col != "SGPA" and col != "CGPA"]
-                existing_subjects = Subject.objects.filter(code__in=subject_codes)
 
-                batch = Class.objects.filter(sem=sem, year=year, students=student).first().batch
-                # breakpoint()
-                # print(f"Student {student_id} exists in the database.")
-                for subject in existing_subjects:
-                    # print(f"Subject {subject.code} exists in the database. grade {row_data[subject.code]}")
-                    
-                    res = Result(
-                        sem=sem, 
-                        year=year, 
-                        batch=batch,
-                        exam_type=exam_type, 
-                        student=student, 
-                        subject=subject, 
-                        grade=row_data[subject.code], 
-                        backlog=False if row_data[subject.code] != "F" else True)
-                    
-                    result_list.append(res)
-                    print(f"Result created {res}")
-                print(f"student CGPA : {row_data['CGPA']}")
-                student.cgpa = row_data["CGPA"]
-                student.save()
-                print("=====================================")
+                if student:
+                    # Exam Result Creation
+                    subject_codes = [col.strip() for col in row_data.keys() if col not in ["Student", "SGPA", "CGPA"]]
+                    existing_subjects = Subject.objects.filter(code__in=subject_codes)
+                    if existing_subjects:
+                        for subject in existing_subjects:
+                            res = Result(
+                                sem=sem,
+                                year=year,
+                                batch=batch.batch,
+                                exam_type=exam_type,
+                                student=student,
+                                subject=subject,
+                                grade=row_data[subject.code],
+                                backlog=row_data[subject.code] == "F"
+                            )
+                            result_list.append(res)
+
+                    student.cgpa = row_data["CGPA"]
+                    student.save()
+
             Result.objects.bulk_create(result_list)
-            # student.cgpa += row_data["CGPA"]
-            return Response({"message": "Subjects checked successfully", "success":True}, status=status.HTTP_201_CREATED)
+            return Response({"message": "Subjects checked successfully", "success": True}, status=status.HTTP_201_CREATED)
 
         except Exception as e:
+            print(e)
             return Response({"error": str(e)})
 
     
@@ -167,7 +162,7 @@ class PassRateView(APIView):
         if not sem or not year or not batch:
             return Response({"error": "Please provide semester, year, and batch"})
         
-        pass_grades = ['A', 'B', 'C', 'D', 'P']  # Defining pass grades here
+        passed_grades = ['A', 'B', 'C', 'D', 'P', "A+", "B+", "C+", "D+"]  # Defining pass grades here
         
         subjects_pass_counts = Subject.objects.annotate(
             pass_count=Count('result', filter=Q(result__grade__in=pass_grades, result__sem=sem, result__year=year, result__batch=batch))
@@ -204,7 +199,7 @@ class ResultAnalysis(APIView):
         if not sem or not year or not batch:
             return Response({"error": "Please provide semester, year, and batch"})
         
-        passed_grades = ['A', 'B', 'C', 'D', 'P']  # Define your pass grades here
+        passed_grades = ['A', 'B', 'C', 'D', 'P', "A+", "B+", "C+", "D+"]  # Define your pass grades here
         
         results = Result.objects.filter(sem=sem, year=year, batch=batch)
         
